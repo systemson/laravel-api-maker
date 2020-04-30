@@ -1,0 +1,32 @@
+{
+    "name": "systemson/laravel-api-maker",
+    "description": "Laravel simple api crud maker",
+    "type": "library",
+    "authors": [
+        {
+            "name": "Deivi Peña",
+            "email": "systemson@gmail.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "autoload": {
+        "psr-4": {
+            "Systemson\\ApiMaker\\": "src/"
+        }
+    },
+    "require": {
+        "php": ">=7.3"
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "0.1.x-dev"
+        }
+    },
+    "config": {
+        "preferred-install": "dist",
+        "sort-packages": true,
+        "optimize-autoloader": true,
+        "process-timeout": 0
+    }
+}
