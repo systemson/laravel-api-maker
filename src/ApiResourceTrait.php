@@ -83,7 +83,11 @@ trait ApiResourceTrait
 
     protected function find(string $class, $id)
     {
-        return $class::findOrFail($id);
+        $listable = (new $class)->getListable();
+
+        $select = empty($listable) ? '*' : $listable;
+
+        return $class::select($select)->firstOrFail($id);
     }
 
     protected function new(string $class, Request $request)
