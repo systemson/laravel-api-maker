@@ -87,7 +87,7 @@ trait ApiResourceTrait
 
         $select = empty($listable) ? '*' : $listable;
 
-        return $class::select($select)->firstOrFail($id);
+        return $class::select($select)->findOrFail($id);
     }
 
     protected function new(string $class, Request $request)
