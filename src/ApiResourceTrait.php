@@ -4,6 +4,7 @@ namespace Systemson\ApiMaker;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 trait ApiResourceTrait
 {
@@ -21,37 +22,52 @@ trait ApiResourceTrait
         // se aplica el/los where
         foreach ($listable as $column) {
             if ($request->has($column)) {
-                $query->where($column, $request->get($column));
+                if (is_array($value = $request->get($column))) {
+                    $query->whereIn($column, $value);
+                }
+
+                $query->where($column, $value);
+            } elseif ($request->has($column . '_not')) {
+                if (is_array($value = $request->get($column . '_not'))) {
+                    $query->whereNotIn($column, $value);
+                }
+
+                $query->where($column, '<>', $value);
             } elseif ($request->has($column . '_like')) {
                 $query->where($column, 'LIKE', '%' . $request->get($column . '_like') . '%');
-            } elseif ($request->has($column . '_not')) {
-                $query->where($column, '<>', $request->get($column . '_not'));
             }
         }
 
         // Se aplica el orderBy
-        if ($request->has('order_by') && ($order_by = $this->getOrderBy($request, $listable)) !== false && $this->validateOrderBy($order_by, $listable)) {
+        if ($request->has('order_by')
+            &&
+            ($order_by = $this->getOrderBy($request, $listable)) !== false
+            &&
+            $this->validateOrderBy($order_by, $listable)
+        ) {
             $query->orderBy($order_by->column, $order_by->sort);
         }
+
+        // Se cargan las relaciones
+        $query->with($this->getEagerLoadedRelations($request, $class));
 
         // Se modifica la consulta antes de enviarla
         if (method_exists($this, 'alterQuery')) {
             $query = $this->alterQuery($query);
         }
 
-        // Se aplica el per page
+        // Se aplica el per page.
         if (!is_null($request->get('per_page')) && $request->get('per_page') == 0) {
             $perPage = $query->count();
         } else {
             $perPage = $request->get('per_page') ?? $this->perPage;
         }
 
-        $query_string = array_merge($listable, ['order_by', 'per_page']);
+        $query_string = array_merge($listable, ['order_by', 'per_page', 'with']);
 
         return $query
             ->paginate($perPage)
-            ->appends($request->only($query_string)
-        );
+            ->appends($request->only($query_string));
     }
 
     private function getOrderBy(Request $request)
@@ -81,28 +97,35 @@ trait ApiResourceTrait
         false;
     }
 
+    private function getEagerLoadedRelations(Request $request, $model)
+    {
+        return collect(explode(',', $request->get('with')))->filter(
+            function ($relation) use ($model) {
+                return method_exists($model, $relation);
+            }
+        )->toArray();
+    }
+
     protected function find(string $class, $id)
     {
         $listable = (new $class)->getListable();
 
         $select = empty($listable) ? '*' : $listable;
 
-        return $class::select($select)->findOrFail($id);
+        return $class::select($select)
+            ->with($this->getEagerLoadedRelations(request(), $class))
+            ->findOrFail($id);
     }
 
     protected function new(string $class, Request $request)
     {
-        $resource =  new $class;
+        $resource = new $class;
 
         $input = $request->only($resource->getFillable());
 
         $resource->fill($this->alterInput($input));
 
-        if ($resource->validate($request)) {
-            $resource->save();
-        } else {
-            return abort(422);
-        }
+        $resource->save();
 
         return $resource;
     }
@@ -118,12 +141,8 @@ trait ApiResourceTrait
 
         $resource->fill($this->alterInput($input));
 
-        if ($resource->validate($request)) {
-            $resource->save();
-        } else {
-            return abort(422);
-        }
+        $resource->save();
 
-        return $resource;
+        return $resource->fresh();
     }
 }

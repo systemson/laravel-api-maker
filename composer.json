@@ -18,6 +18,10 @@
     "require": {
         "php": ">=7.3"
     },
+    "scripts": {
+        "sniff": "phpcs --standard=PSR2 ./src",
+        "fix-cs": "phpcbf --standard=PSR2 ./src"
+    },
     "extra": {
         "branch-alias": {
             "dev-master": "0.1.x-dev"

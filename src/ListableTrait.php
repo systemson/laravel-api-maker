@@ -14,7 +14,7 @@ trait ListableTrait
      */
     public function getListable(): array
     {
-        return $this->listable;
+        return $this->listable ?? [];
     }
 
     /**
