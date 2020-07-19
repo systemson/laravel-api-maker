@@ -12,12 +12,18 @@ trait ApiResourceTrait
 
     protected function list(string $class, Request $request)
     {
-        $listable = (new $class)->getListable();
+        $model = (new $class);
+
+        $listable = $model->getListable();
 
         $select = empty($listable) ? '*' : $listable;
 
+        $select = !is_array($select) ? $select : array_map(function ($column) use ($model) {
+            return "{$model->getTable()}.{$column}";
+        }, $select);
+
         // Se aplica el select.
-        $query = $class::select($select);
+        $query = $model->select($select);
 
         // se aplica el/los where
         foreach ($listable as $column) {
@@ -43,13 +49,13 @@ trait ApiResourceTrait
             &&
             ($order_by = $this->getOrderBy($request, $listable)) !== false
             &&
-            $this->validateOrderBy($order_by, $listable)
+            $this->validateOrderBy($order_by, $model, $listable)
         ) {
-            $query->orderBy($order_by->column, $order_by->sort);
+            $query = $this->applyOrderBy($query, $order_by);
         }
 
         // Se cargan las relaciones
-        $query->with($this->getEagerLoadedRelations($request, $class));
+        $query->with($this->getEagerLoadedRelations($request, $model));
 
         // Se modifica la consulta antes de enviarla
         if (method_exists($this, 'alterQuery')) {
@@ -76,25 +82,40 @@ trait ApiResourceTrait
 
         $array = explode(':', $raw);
 
-        if (isset($array[1]) && in_array(strtoupper($array[1]), ['ASC', 'DESC'])) {
-            $order = $array[1];
-        } else {
-            $order = 'ASC';
-        }
-
         return (object) [
             'column' => $array[0],
-            'sort' => $order,
+            'order' => $array[1] ?? 'ASC',
         ];
     }
 
-    private function validateOrderBy($order_by, array $columns = [])
+    private function validateOrderBy($order_by, $model, array $columns = [])
     {
-        if (!empty($columns)) {
-            return in_array($order_by->column, $columns);
+        if (empty($columns) || !in_array(strtoupper($order_by->order), ['ASC', 'DESC'])) {
+            return false;
         }
 
-        false;
+        if (in_array($order_by->column, $columns)) {
+            return true;
+        } elseif (count($name_array = explode('.', $order_by->column)) == 2) {
+            return method_exists($model, $name_array[0]);
+        }
+
+        return false;
+    }
+
+    private function applyOrderBy($query, $order_by)
+    {
+        if (count($columnaArray = explode('.', $order_by->column)) == 2) {
+            $model = $query->getModel();
+            $relation = $model->{$columnaArray[0]}();
+
+            return $query->join(
+                $table = $relation->getRelated()->getTable(),
+                $relation->getQualifiedForeignKeyName(),
+                $relation->getQualifiedOwnerKeyName()
+            )->orderBy("{$table}.{$columnaArray[1]}", $order_by->order);
+        }
+        return $query->orderBy($order_by->column, $order_by->order);
     }
 
     private function getEagerLoadedRelations(Request $request, $model)
@@ -106,13 +127,19 @@ trait ApiResourceTrait
         )->toArray();
     }
 
-    protected function find(string $class, $id)
+    protected function find(string $class, $id, $pk = 'id')
     {
-        $listable = (new $class)->getListable();
+        $model = (new $class);
+
+        $listable = $model->getListable();
+
+        if ($model->getKeyName() != $pk) {
+            $model->setKeyName($pk);
+        }
 
         $select = empty($listable) ? '*' : $listable;
 
-        return $class::select($select)
+        return $model->select($select)
             ->with($this->getEagerLoadedRelations(request(), $class))
             ->findOrFail($id);
     }
@@ -127,7 +154,7 @@ trait ApiResourceTrait
 
         $resource->save();
 
-        return $resource;
+        return $resource->refresh();
     }
 
     protected function alterInput(array $input): array
