@@ -5,7 +5,6 @@ namespace Systemson\ApiMaker;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\DB;
 
 trait ApiResourceTrait
 {
