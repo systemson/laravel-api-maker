@@ -12,20 +12,16 @@ trait ApiResourceTrait
 
     protected function list(string $class, Request $request)
     {
-        $model = (new $class);
+        // New Model instance
+        $model = new $class;
 
+        // Get model's listable
         $listable = $model->getListable();
 
-        $select = empty($listable) ? '*' : $listable;
+        // Get columns to select
+        $query = $model->select($model->getSelectable());
 
-        $select = !is_array($select) ? $select : array_map(function ($column) use ($model) {
-            return "{$model->getTable()}.{$column}";
-        }, $select);
-
-        // Se aplica el select.
-        $query = $model->select($select);
-
-        // se aplica el/los where
+        // Set where
         foreach ($listable as $column) {
             if ($request->has($column)) {
                 if (is_array($value = $request->get($column))) {
@@ -44,25 +40,25 @@ trait ApiResourceTrait
             }
         }
 
-        // Se aplica el orderBy
+        // Set order by
         if ($request->has('order_by')
             &&
             ($order_by = $this->getOrderBy($request, $listable)) !== false
             &&
-            $this->validateOrderBy($order_by, $model, $listable)
+            $this->validateOrderBy($order_by, $listable)
         ) {
-            $query = $this->applyOrderBy($query, $order_by);
+            $query->orderBy($order_by->column, $order_by->sort);
         }
 
-        // Se cargan las relaciones
-        $query->with($this->getEagerLoadedRelations($request, $model));
+        // Load relations
+        $query->with($this->getEagerLoadedRelations($request, $class));
 
-        // Se modifica la consulta antes de enviarla
+        // Alter the query before getting the items
         if (method_exists($this, 'alterQuery')) {
             $query = $this->alterQuery($query);
         }
 
-        // Se aplica el per page.
+        // Set per_page
         if (!is_null($request->get('per_page')) && $request->get('per_page') == 0) {
             $perPage = $query->count();
         } else {
