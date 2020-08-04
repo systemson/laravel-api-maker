@@ -22,21 +22,23 @@ trait ApiResourceTrait
         $query = $model->select($model->getSelectable());
 
         // Set where
-        foreach ($listable as $column) {
-            if ($request->has($column)) {
-                if (is_array($value = $request->get($column))) {
+        foreach ($listable as $key => $name) {
+            list($name, $column) = $this->getNameAndColumn($key, $name);
+
+            if ($request->has($name)) {
+                if (is_array($value = $request->get($name))) {
                     $query->whereIn($column, $value);
                 }
 
                 $query->where($column, $value);
-            } elseif ($request->has($column . '_not')) {
-                if (is_array($value = $request->get($column . '_not'))) {
+            } elseif ($request->has($name . '_not')) {
+                if (is_array($value = $request->get($name . '_not'))) {
                     $query->whereNotIn($column, $value);
                 }
 
                 $query->where($column, '<>', $value);
-            } elseif ($request->has($column . '_like')) {
-                $query->where($column, 'LIKE', '%' . $request->get($column . '_like') . '%');
+            } elseif ($request->has($name . '_like')) {
+                $query->where($column, 'LIKE', '%' . $request->get($name . '_like') . '%');
             }
         }
 
@@ -70,6 +72,16 @@ trait ApiResourceTrait
         return $query
             ->paginate($perPage)
             ->appends($request->only($query_string));
+    }
+
+    public function getNameAndColumn($key, $name)
+    {
+        return [
+            // Name
+            $name,
+            // Column
+            !is_numeric($key) ? $key : $name,
+        ];
     }
 
     private function getOrderBy(Request $request)
