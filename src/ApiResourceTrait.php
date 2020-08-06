@@ -22,23 +22,21 @@ trait ApiResourceTrait
         $query = $model->select($model->getSelectable());
 
         // Set where
-        foreach ($listable as $key => $name) {
-            list($name, $column) = $this->getNameAndColumn($key, $name);
-
-            if ($request->has($name)) {
-                if (is_array($value = $request->get($name))) {
+        foreach ($listable as $column) {
+            if ($request->has($column)) {
+                if (is_array($value = $request->get($column))) {
                     $query->whereIn($column, $value);
                 }
 
                 $query->where($column, $value);
-            } elseif ($request->has($name . '_not')) {
-                if (is_array($value = $request->get($name . '_not'))) {
+            } elseif ($request->has($column . '_not')) {
+                if (is_array($value = $request->get($column . '_not'))) {
                     $query->whereNotIn($column, $value);
                 }
 
                 $query->where($column, '<>', $value);
-            } elseif ($request->has($name . '_like')) {
-                $query->where($column, 'LIKE', '%' . $request->get($name . '_like') . '%');
+            } elseif ($request->has($column . '_like')) {
+                $query->where($column, 'LIKE', '%' . $request->get($column . '_like') . '%');
             }
         }
 
@@ -47,9 +45,9 @@ trait ApiResourceTrait
             &&
             ($order_by = $this->getOrderBy($request, $listable)) !== false
             &&
-            $this->validateOrderBy($order_by, $listable)
+            $this->validateOrderBy($order_by, $model, $listable)
         ) {
-            $query->orderBy($order_by->column, $order_by->sort);
+            $query = $this->applyOrderBy($query, $order_by);
         }
 
         // Load relations
@@ -72,16 +70,6 @@ trait ApiResourceTrait
         return $query
             ->paginate($perPage)
             ->appends($request->only($query_string));
-    }
-
-    public function getNameAndColumn($key, $name)
-    {
-        return [
-            // Name
-            $name,
-            // Column
-            !is_numeric($key) ? $key : $name,
-        ];
     }
 
     private function getOrderBy(Request $request)

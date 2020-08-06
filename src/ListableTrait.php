@@ -23,20 +23,24 @@ trait ListableTrait
      *
      * @return array
      */
-    public function getSelectable(): array
+    public function getSelectable()
     {
-        if (!isset($this->listable)) {
+        if (!isset($this->listable) || empty($this->listable)) {
             return '*';
         }
 
         foreach ($this->listable as $key => $value) {
             if (is_numeric($key)) {
-                $return[] = $value;
+                if (count(explode('.', $value)) == 1) {
+                    $return[] = "{$this->getTable()}.{$value}";
+                } else {
+                    $return[] = $value;
+                }
             } else {
                 $return[] = DB::raw("{$key} as {$value}");
             }
         }
 
-        return $return ?? [];
+        return $return;
     }
 }
