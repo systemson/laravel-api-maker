@@ -118,7 +118,8 @@ trait ApiResourceTrait
     {
         return collect(explode(',', $request->get('with')))->filter(
             function ($relation) use ($model) {
-                return method_exists($model, $relation);
+                $relationArray = explode('.',$relation);
+                return method_exists($model, current($relationArray));
             }
         )->toArray();
     }
