@@ -40,6 +40,18 @@ trait ApiResourceTrait
             }
         }
 
+        // Filters by relations
+        if ($request->has('has')) {
+            if ($has = json_decode($request->get('has'), true)) {
+                foreach ($has as $name => $values) {
+                    list($relation, $column) = explode('.', $name);
+                        $query->whereHas($relation, function ($query) use ($column, $values) {
+                        $query->whereIn("{$query->getModel()->getTable()}.{$column}", $values);
+                    });
+                }
+            }
+        }
+
         // Set order by
         if ($request->has('order_by')
             &&
