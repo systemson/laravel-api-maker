@@ -46,8 +46,8 @@ trait ApiResourceTrait
                 foreach ($has as $name => $values) {
                     list($relation, $column) = explode('.', $name);
                         $query->whereHas($relation, function ($query) use ($column, $values) {
-                        $query->whereIn("{$query->getModel()->getTable()}.{$column}", $values);
-                    });
+                            $query->whereIn("{$query->getModel()->getTable()}.{$column}", $values);
+                        });
                 }
             }
         }
@@ -130,7 +130,7 @@ trait ApiResourceTrait
     {
         return collect(explode(',', $request->get('with')))->filter(
             function ($relation) use ($model) {
-                $relationArray = explode('.',$relation);
+                $relationArray = explode('.', $relation);
                 return method_exists($model, current($relationArray));
             }
         )->toArray();
@@ -146,9 +146,7 @@ trait ApiResourceTrait
             $model->setKeyName($pk);
         }
 
-        $select = empty($listable) ? '*' : $listable;
-
-        return $model->select($select)
+        return $model->select($model->getSelectable())
             ->with($this->getEagerLoadedRelations(request(), $class))
             ->findOrFail($id);
     }
