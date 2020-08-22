@@ -18,25 +18,28 @@ trait ApiResourceTrait
         // Get model's listable
         $listable = $model->getListable();
 
+        // Get model's listable
+        $table = $model->getTable();
+
         // Get columns to select
         $query = $model->select($model->getSelectable());
 
-        // Set where
+        // Filters - Set wheres
         foreach ($listable as $column) {
             if ($request->has($column)) {
                 if (is_array($value = $request->get($column))) {
-                    $query->whereIn($column, $value);
+                    $query->whereIn("{$table}.{$column}", $value);
                 }
 
-                $query->where($column, $value);
+                $query->where("{$table}.{$column}", $value);
             } elseif ($request->has($column . '_not')) {
                 if (is_array($value = $request->get($column . '_not'))) {
-                    $query->whereNotIn($column, $value);
+                    $query->whereNotIn("{$table}.{$column}", $value);
                 }
 
-                $query->where($column, '<>', $value);
+                $query->where("{$table}.{$column}", '<>', $value);
             } elseif ($request->has($column . '_like')) {
-                $query->where($column, 'LIKE', '%' . $request->get($column . '_like') . '%');
+                $query->whereRaw("UPPER({$table}.{$column}) LIKE UPPER('%" . $request->get($column . '_like') . "%')");
             }
         }
 

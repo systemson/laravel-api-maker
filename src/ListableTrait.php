@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\DB;
 trait ListableTrait
 {
     /**
-     * Returns the listable attributes
+     * Returns the listable attributes.
      *
      * @return array
      */
@@ -19,7 +19,40 @@ trait ListableTrait
     }
 
     /**
-     * Returns the selectable attributes
+     * Sets the listable attributes.
+     *
+     * @param array $listable
+     *
+     * @return static
+     */
+    public function setListable(array $listable): self
+    {
+        $this->listable = $listable;
+
+        return $this;
+    }
+
+    /**
+     * Adds new item to the listable attributes.
+     *
+     * @param mixed      $value
+     * @param mixed|null $alias
+     *
+     * @return static
+     */
+    public function addListable($value, $alias = null): self
+    {
+        if (is_null($alias)) {
+            $this->listable[] = $value;
+        }
+
+        $this->listable[$value] = $alias;
+
+        return $this;
+    }
+
+    /**
+     * Returns the selectable attributes.
      *
      * @return array
      */
