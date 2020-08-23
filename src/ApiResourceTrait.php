@@ -25,21 +25,25 @@ trait ApiResourceTrait
         $query = $model->select($model->getSelectable());
 
         // Filters - Set wheres
-        foreach ($listable as $column) {
-            if ($request->has($column)) {
-                if (is_array($value = $request->get($column))) {
-                    $query->whereIn("{$table}.{$column}", $value);
+        foreach ($listable as $key => $alias) {
+            list($name, $column) = $this->getNameAndColumn($key, $alias, $table);
+
+            if ($request->has($name)) {
+                if (is_array($value = $request->get($name))) {
+                    $query->whereIn($column, $value);
+                    continue;
                 }
 
-                $query->where("{$table}.{$column}", $value);
-            } elseif ($request->has($column . '_not')) {
-                if (is_array($value = $request->get($column . '_not'))) {
-                    $query->whereNotIn("{$table}.{$column}", $value);
+                $query->where($column, $value);
+            } elseif ($request->has($name . '_not')) {
+                if (is_array($value = $request->get($name . '_not'))) {
+                    $query->whereNotIn($column, $value);
+                    continue;
                 }
 
-                $query->where("{$table}.{$column}", '<>', $value);
-            } elseif ($request->has($column . '_like')) {
-                $query->whereRaw("UPPER({$table}.{$column}) LIKE UPPER('%" . $request->get($column . '_like') . "%')");
+                $query->where($column, '<>', $value);
+            } elseif ($request->has($name . '_like')) {
+                $query->whereRaw("UPPER({$column}) LIKE UPPER('%" . $request->get($name . '_like') . "%')");
             }
         }
 
@@ -85,6 +89,25 @@ trait ApiResourceTrait
         return $query
             ->paginate($perPage)
             ->appends($request->only($query_string));
+    }
+
+    private function getNameAndColumn($key, $alias, $table)
+    {
+        $column = !is_numeric($key) ? $key : $alias;
+
+        if ($alias == $column) {
+            return [
+                // Name
+                $alias,
+                // Column
+                "{$table}.{$column}",
+            ];
+        }
+
+        return [
+            $alias,
+            $column,
+        ];
     }
 
     private function getOrderBy(Request $request)
