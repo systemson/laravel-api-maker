@@ -162,13 +162,11 @@ trait ApiResourceTrait
         )->toArray();
     }
 
-    protected function find(string $class, $id, $pk = 'id')
+    protected function find(string $class, $id, $pk = null)
     {
         $model = (new $class);
 
-        $listable = $model->getListable();
-
-        if ($model->getKeyName() != $pk) {
+        if (!is_null($pk)) {
             $model->setKeyName($pk);
         }
 
