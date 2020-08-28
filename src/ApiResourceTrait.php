@@ -78,7 +78,7 @@ trait ApiResourceTrait
         }
 
         // Set per_page
-        if (!is_null($request->get('per_page')) && $request->get('per_page') == 0) {
+        if ($this->perPage != 0 && !is_null($request->get('per_page')) && $request->get('per_page') == 0) {
             $perPage = $query->count();
         } else {
             $perPage = $request->get('per_page') ?? $this->perPage;
