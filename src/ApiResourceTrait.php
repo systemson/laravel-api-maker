@@ -78,7 +78,7 @@ trait ApiResourceTrait
         }
 
         // Set per_page
-        if (!is_null($request->get('per_page')) && $request->get('per_page') == 0) {
+        if ($this->perPage != 0 && !is_null($request->get('per_page')) && $request->get('per_page') == 0) {
             $perPage = $query->count();
         } else {
             $perPage = $request->get('per_page') ?? $this->perPage;
@@ -88,7 +88,19 @@ trait ApiResourceTrait
 
         return $query
             ->paginate($perPage)
-            ->appends($request->only($query_string));
+            ->appends($request->only($query_string))
+            ->each(function ($resource) use ($request) {
+                $resource->append($this->getAppendableAttributes($request));
+            })
+        ;
+    }
+
+    private function getAppendableAttributes(Request $request)
+    {
+        if (!$request->has('append')) {
+            return [];
+        }
+        return explode(',', $request->get('append'));
     }
 
     private function getNameAndColumn($key, $alias, $table)
@@ -162,19 +174,19 @@ trait ApiResourceTrait
         )->toArray();
     }
 
-    protected function find(string $class, $id, $pk = 'id')
+    protected function find(string $class, $id, $pk = null)
     {
         $model = (new $class);
 
-        $listable = $model->getListable();
-
-        if ($model->getKeyName() != $pk) {
+        if (!is_null($pk)) {
             $model->setKeyName($pk);
         }
 
         return $model->select($model->getSelectable())
             ->with($this->getEagerLoadedRelations(request(), $class))
-            ->findOrFail($id);
+            ->findOrFail($id)
+            ->append($this->getAppendableAttributes(request()))
+        ;
     }
 
     protected function new(string $class, Request $request)
