@@ -86,13 +86,18 @@ trait ApiResourceTrait
 
         $query_string = array_merge($listable, ['order_by', 'per_page', 'with']);
 
-        return $query
+        $paginated = $query
             ->paginate($perPage)
             ->appends($request->only($query_string))
+        ;
+
+        $items = collect($paginated->items())
             ->each(function ($resource) use ($request) {
                 $resource->append($this->getAppendableAttributes($request));
             })
         ;
+
+        return $paginated;
     }
 
     private function getAppendableAttributes(Request $request)
