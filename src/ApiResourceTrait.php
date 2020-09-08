@@ -29,15 +29,15 @@ trait ApiResourceTrait
             list($name, $column) = $this->getNameAndColumn($key, $alias, $table);
 
             if ($request->has($name)) {
-                if (is_array($value = $request->get($name))) {
-                    $query->whereIn($column, $value);
+                if (is_array($value = $request->get($name)) || count($valueArray = explode(',', $value)) > 1) {
+                    $query->whereIn($column, $valueArray ?? $value);
                     continue;
                 }
 
                 $query->where($column, $value);
             } elseif ($request->has($name . '_not')) {
-                if (is_array($value = $request->get($name . '_not'))) {
-                    $query->whereNotIn($column, $value);
+                if (is_array($value = $request->get($name . '_not')) || count($value = explode(',', $value)) > 1) {
+                    $query->whereNotIn($column, $valueArray ?? $value);
                     continue;
                 }
 
