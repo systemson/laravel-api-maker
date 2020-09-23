@@ -8,8 +8,6 @@ use Illuminate\Support\Str;
 
 trait ApiResourceTrait
 {
-    protected $perPage = 20;
-
     protected function list(string $class, Request $request)
     {
         // New Model instance
@@ -77,7 +75,7 @@ trait ApiResourceTrait
             $query = $this->alterQuery($query);
         }
 
-        $perPage = $request->get('per_page') ?? $this->perPage;
+        $perPage = $request->get('per_page') ?? $this->perPage ?? 20;
 
         // Set per_page
         if ($perPage === 0) {
