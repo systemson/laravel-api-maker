@@ -77,11 +77,11 @@ trait ApiResourceTrait
             $query = $this->alterQuery($query);
         }
 
+        $perPage = $request->get('per_page') ?? $this->perPage;
+
         // Set per_page
-        if ($request->get('per_page') === 0 || $this->perPag === 0) {
+        if ($perPage === 0) {
             $perPage = $query->count();
-        } else {
-            $perPage = $request->get('per_page') ?? $this->perPage;
         }
 
         $query_string = array_merge($listable, ['order_by', 'per_page', 'with']);
