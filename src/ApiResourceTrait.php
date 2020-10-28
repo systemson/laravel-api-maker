@@ -44,7 +44,10 @@ trait ApiResourceTrait
                 $query->whereRaw("UPPER({$column}) LIKE UPPER('%" . $request->get($name . '_like') . "%')");
             } elseif ($request->has($name . '_between')) {
                 $value = $request->get($name . '_between');
-                $query->whereBetween($column, explode(',' $value));
+
+                $valueArray = !is_array($value) ? explode(',' $value) : $value;
+
+                $query->whereBetween($column, $valueArray);
             }
         }
 
