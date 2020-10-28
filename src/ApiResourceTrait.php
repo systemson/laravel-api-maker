@@ -45,7 +45,7 @@ trait ApiResourceTrait
             } elseif ($request->has($name . '_between')) {
                 $value = $request->get($name . '_between');
 
-                $valueArray = !is_array($value) ? explode(',' $value) : $value;
+                $valueArray = !is_array($value) ? explode(',', $value) : $value;
 
                 $query->whereBetween($column, $valueArray);
             }
