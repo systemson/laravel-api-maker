@@ -34,7 +34,7 @@ trait ApiResourceTrait
 
                 $query->where($column, $value);
             } elseif ($request->has($name . '_not')) {
-                if (is_array($value = $request->get($name . '_not')) || count($value = explode(',', $value)) > 1) {
+                if (is_array($value = $request->get($name . '_not')) || count($valueArray = explode(',', $value)) > 1) {
                     $query->whereNotIn($column, $valueArray ?? $value);
                     continue;
                 }
