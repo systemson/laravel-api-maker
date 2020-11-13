@@ -64,13 +64,18 @@ trait ApiResourceTrait
         }
 
         // Set order by
-        if ($request->has('order_by')
-            &&
-            ($order_by = $this->getOrderBy($request, $listable)) !== false
-            &&
-            $this->validateOrderBy($order_by, $model, $listable)
-        ) {
-            $query = $this->applyOrderBy($query, $order_by);
+        if ($request->has('order_by')) {
+            $orderByArray = explode(',', $request->get('order_by'));
+
+            foreach ($orderByArray as $orderByRaw) {
+                if (
+                   ($orderBy = $this->getOrderBy($orderByRaw, $listable)) !== false
+                    &&
+                    $this->validateOrderBy($orderBy, $model, $listable)
+                ) {
+                    $query = $this->applyOrderBy($query, $orderBy);
+                }
+            }
         }
 
         // Load relations
@@ -131,11 +136,9 @@ trait ApiResourceTrait
         ];
     }
 
-    private function getOrderBy(Request $request)
+    private function getOrderBy($orderBy)
     {
-        $raw = $request->get('order_by');
-
-        $array = explode(':', $raw);
+        $array = explode(':', $orderBy);
 
         return (object) [
             'column' => $array[0],
@@ -170,6 +173,7 @@ trait ApiResourceTrait
                 $relation->getQualifiedOwnerKeyName()
             )->orderBy("{$table}.{$columnaArray[1]}", $order_by->order);
         }
+
         return $query->orderBy($order_by->column, $order_by->order);
     }
 
