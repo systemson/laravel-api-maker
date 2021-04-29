@@ -26,6 +26,7 @@ trait ApiResourceTrait
         foreach ($listable as $key => $alias) {
             list($name, $column) = $this->getNameAndColumn($key, $alias, $table);
 
+            // Where equals to
             if ($request->has($name)) {
                 if (is_array($value = $request->get($name)) || count($valueArray = explode(',', $value)) > 1) {
                     $query->whereIn($column, $valueArray ?? $value);
@@ -33,6 +34,8 @@ trait ApiResourceTrait
                 }
 
                 $query->where($column, $value);
+                
+            // Where not equals to
             } elseif ($request->has($name . '_not')) {
                 if (is_array($value = $request->get($name . '_not')) || count($valueArray = explode(',', $value)) > 1) {
                     $query->whereNotIn($column, $valueArray ?? $value);
@@ -40,8 +43,24 @@ trait ApiResourceTrait
                 }
 
                 $query->where($column, '<>', $value);
+                
+            // Where like to
             } elseif ($request->has($name . '_like')) {
                 $query->whereRaw("UPPER({$column}) LIKE UPPER('%" . $request->get($name . '_like') . "%')");
+
+            // Where greater than or equals to
+            } elseif ($request->has($name . '_gte')) {
+                $value = $request->get($name . '_gte');
+
+                $query->where($column, '>=', $value);
+
+            // Where less than or equals to
+            } elseif ($request->has($name . '_lte')) {
+                $value = $request->get($name . '_lte');
+
+                $query->where($column, '<=', $value);
+                
+            // Where between
             } elseif ($request->has($name . '_between')) {
                 $value = $request->get($name . '_between');
 
