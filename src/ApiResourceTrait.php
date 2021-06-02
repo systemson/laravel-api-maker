@@ -47,19 +47,21 @@ trait ApiResourceTrait
             // Where like to
             } elseif ($request->has($name . '_like')) {
                 $query->whereRaw("UPPER({$column}) LIKE UPPER('%" . $request->get($name . '_like') . "%')");
+            } elseif ($request->has($name . '_gte') || $request->has($name . '_lte')) {
 
-            // Where greater than or equals to
-            } elseif ($request->has($name . '_gte')) {
-                $value = $request->get($name . '_gte');
+                // Where greater than or equals to
+                if ($request->has($name . '_gte')) {
+                    $value = $request->get($name . '_gte');
 
-                $query->where($column, '>=', $value);
+                    $query->where($column, '>=', $value);
+                // Where less than or equals to
+                }
 
-            // Where less than or equals to
-            } elseif ($request->has($name . '_lte')) {
-                $value = $request->get($name . '_lte');
+                if ($request->has($name . '_lte')) {
+                    $value = $request->get($name . '_lte');
 
-                $query->where($column, '<=', $value);
-                
+                    $query->where($column, '<=', $value);
+                }
             // Where between
             } elseif ($request->has($name . '_between')) {
                 $value = $request->get($name . '_between');
