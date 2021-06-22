@@ -72,7 +72,12 @@ trait ApiResourceTrait
                 $query->whereBetween($column, $valueArray);
             // Where null
             } elseif ($request->has($name . '_null')) {
-                $query->whereNull($column);
+                $value = $request->get($name . '_null');
+                if (is_null($value)) {
+                    $query->whereNull($column);
+                } elseif ($value) {
+                    $query->whereNotNull($column);
+                }
             // Where not null
             } elseif ($request->has($name . '_not_null')) {
                 $query->whereNotNull($column);
