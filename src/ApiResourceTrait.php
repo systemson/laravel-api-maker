@@ -200,6 +200,14 @@ trait ApiResourceTrait
             $model = $query->getModel();
             $relation = $model->{$columnaArray[0]}();
 
+            if ($relation instanceof \Illuminate\Database\Eloquent\Relations\HasOne) {
+	            return $query->join(
+	                $table = $relation->getRelated()->getTable(),
+	                $relation->getQualifiedForeignKeyName(),
+	                $relation->getQualifiedParentKeyName()
+	            )->orderBy("{$table}.{$columnaArray[1]}", $order_by->order);
+            }
+
             return $query->join(
                 $table = $relation->getRelated()->getTable(),
                 $relation->getQualifiedForeignKeyName(),
