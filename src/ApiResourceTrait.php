@@ -47,7 +47,8 @@ trait ApiResourceTrait
                 
             // Where like to
             } elseif ($request->has($name . '_like')) {
-                $query->whereRaw("UPPER({$column}) LIKE UPPER('%" . $request->get($name . '_like') . "%')");
+                $tablePrefix = env('DB_PREFIX');
+                $query->whereRaw("UPPER({$tablePrefix}{$column}) LIKE UPPER('%" . $request->get($name . '_like') . "%')");
             } elseif ($request->has($name . '_gte') || $request->has($name . '_lte')) {
 
                 // Where greater than or equals to
@@ -153,14 +154,13 @@ trait ApiResourceTrait
     private function getNameAndColumn($key, $alias, $table)
     {
         $column = !is_numeric($key) ? $key : $alias;
-        $tablePrefix = env('DB_PREFIX');
 
         if ($alias == $column) {
             return [
                 // Name
                 $alias,
                 // Column
-                "{$tablePrefix}{$table}.{$column}",
+                "{$table}.{$column}",
             ];
         }
 
