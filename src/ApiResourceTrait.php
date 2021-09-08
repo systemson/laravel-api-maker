@@ -153,13 +153,14 @@ trait ApiResourceTrait
     private function getNameAndColumn($key, $alias, $table)
     {
         $column = !is_numeric($key) ? $key : $alias;
+	$tablePrefix = env('DB_PREFIX');
 
         if ($alias == $column) {
             return [
                 // Name
                 $alias,
                 // Column
-                "{$table}.{$column}",
+                "{$tablePrefix}{$table}.{$column}",
             ];
         }
 
