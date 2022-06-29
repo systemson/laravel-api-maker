@@ -46,7 +46,7 @@ trait ApiResourceTrait
                 $query->where($column, '<>', $value);
                 
             // Where like to
-            } elseif ($request->has($name . '_like')) {getLikeOperator
+            } elseif ($request->has($name . '_like')) {
                 $tablePrefix = env('DB_PREFIX');
                 $query->whereRaw($this->getLikeOperator($tablePrefix, $column, $request->get($name . '_like')));
             } elseif ($request->has($name . '_gte') || $request->has($name . '_lte')) {
