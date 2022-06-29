@@ -149,7 +149,7 @@ trait ApiResourceTrait
 
     protected function noPagination($request, $query) {
         $items = $query
-            ->get($perPage)
+            ->get()
         ;
 
         $items->each(function ($resource) use ($request) {
