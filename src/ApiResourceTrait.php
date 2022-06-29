@@ -46,9 +46,9 @@ trait ApiResourceTrait
                 $query->where($column, '<>', $value);
                 
             // Where like to
-            } elseif ($request->has($name . '_like')) {
+            } elseif ($request->has($name . '_like')) {getLikeOperator
                 $tablePrefix = env('DB_PREFIX');
-                $query->whereRaw("UPPER({$tablePrefix}{$column}) LIKE UPPER('%" . $request->get($name . '_like') . "%')");
+                $query->whereRaw($this->getLikeOperator($tablePrefix, $column, $request->get($name . '_like')));
             } elseif ($request->has($name . '_gte') || $request->has($name . '_lte')) {
 
                 // Where greater than or equals to
@@ -56,9 +56,9 @@ trait ApiResourceTrait
                     $value = $request->get($name . '_gte');
 
                     $query->where($column, '>=', $value);
-                // Where less than or equals to
                 }
 
+                // Where less than or equals to
                 if ($request->has($name . '_lte')) {
                     $value = $request->get($name . '_lte');
 
@@ -122,11 +122,48 @@ trait ApiResourceTrait
 
         $perPage = $request->get('per_page') ?? $this->perPage ?? 20;
 
-        // Set per_page
         if ($perPage == 0) {
-            $perPage = $query->count();
+            return $this->noPagination($request, $query);
+        } elseif ($request->has('paginate')) {
+            switch ($request->get('paginate')) {
+                case 'normal':
+                    return $this->normalPagination($request, $query, $perPage, $listable);
+                    break;
+
+                case 'simple':
+                    return $this->simplePagination($request, $query, $perPage);
+                    break;
+
+                case 'none':
+                    return $this->noPagination($request, $query);
+                    break;
+                
+                default:
+                    return $this->normalPagination($request, $query, $perPage, $listable);
+                    break;
+            }
         }
 
+        return $this->normalPagination($request, $query, $perPage, $listable);
+    }
+
+    protected function noPagination($request, $query) {
+        $items = $query
+            ->get($perPage)
+        ;
+
+        $items->each(function ($resource) use ($request) {
+                $resource->append($this->getAppendableAttributes($request));
+            })
+        ;
+
+        return [
+            'data' => $items,
+        ];
+    }
+
+    protected function normalPagination($request, $query, $perPage, $listable) {
+        
         $query_string = array_merge($listable, ['order_by', 'per_page', 'with']);
 
         $paginated = $query
@@ -141,6 +178,24 @@ trait ApiResourceTrait
         ;
 
         return $paginated;
+    }
+
+    protected function simplePagination($request, $query, $perPage) {
+        $paginated = $query
+            ->simplePaginate($perPage)
+        ;
+
+        $items = collect($paginated->items())
+            ->each(function ($resource) use ($request) {
+                $resource->append($this->getAppendableAttributes($request));
+            })
+        ;
+
+        return $paginated;
+    }
+
+    protected function getLikeOperator($tablePrefix, $column, $value) {
+        return "UPPER({$tablePrefix}{$column}) LIKE UPPER('%{$value}%')";
     }
 
     private function getAppendableAttributes(Request $request)
