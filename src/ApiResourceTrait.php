@@ -157,9 +157,7 @@ trait ApiResourceTrait
             })
         ;
 
-        return [
-            'data' => $items,
-        ];
+        return collect(['data' => $items]);
     }
 
     protected function normalPagination($request, $query, $perPage, $listable) {
